@@ -97,7 +97,7 @@ Twitter: https://twitter.com/productivityowl
                             }
                         });
 
-                        if (isNew) {
+                        if (isNew && newTask.text && newTask.text.trim() !== '') {
                             HABITICA.API.createTask(newTask.text);
                         }
                     });
