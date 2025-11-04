@@ -85,18 +85,23 @@ Twitter: https://twitter.com/productivityowl
                 var oldTasks = localStorage['tasks'] ? JSON.parse(localStorage['tasks']) : [];
                 var newTasks = theTasks;
 
-                newTasks.forEach(function(newTask) {
-                    var isNew = true;
-                    oldTasks.forEach(function(oldTask) {
-                        if (newTask.text === oldTask.text) {
-                            isNew = false;
+                var habiticaUserId = localStorage['habitica_user_id'];
+                var habiticaApiToken = localStorage['habitica_api_token'];
+
+                if (habiticaUserId && habiticaApiToken) {
+                    newTasks.forEach(function(newTask) {
+                        var isNew = true;
+                        oldTasks.forEach(function(oldTask) {
+                            if (newTask.text === oldTask.text) {
+                                isNew = false;
+                            }
+                        });
+
+                        if (isNew) {
+                            HABITICA.API.createTask(newTask.text);
                         }
                     });
-
-                    if (isNew) {
-                        HABITICA.API.createTask(newTask.text);
-                    }
-                });
+                }
 
            }
         }
