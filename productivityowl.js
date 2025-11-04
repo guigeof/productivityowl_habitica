@@ -78,31 +78,27 @@ Twitter: https://twitter.com/productivityowl
         else if(request.method == 'save_tasks'){
            var theTasks = request.tasks;
            if(theTasks){
-               var jsonEncoded = JSON.stringify(theTasks);
-               //console.log(jsonEncoded);
-               localStorage['tasks'] = jsonEncoded;
-
-                var oldTasks = localStorage['tasks'] ? JSON.parse(localStorage['tasks']) : [];
-                var newTasks = theTasks;
+               localStorage['tasks'] = JSON.stringify(theTasks);
 
                 var habiticaUserId = localStorage['habitica_user_id'];
                 var habiticaApiToken = localStorage['habitica_api_token'];
 
                 if (habiticaUserId && habiticaApiToken) {
-                    newTasks.forEach(function(newTask) {
-                        var isNew = true;
-                        oldTasks.forEach(function(oldTask) {
-                            if (newTask.text === oldTask.text) {
-                                isNew = false;
-                            }
-                        });
-
-                        if (isNew && newTask.text && newTask.text.trim() !== '') {
-                            HABITICA.API.createTask(newTask.text);
+                    theTasks.forEach(function(task, index) {
+                        if (!task.habitica_id && task.text && task.text.trim() !== '') {
+                            HABITICA.API.createTask(task.text, task.subtasks)
+                                .then(function(response) {
+                                    if (response && response.data && response.data.id) {
+                                        var currentTasks = JSON.parse(localStorage['tasks']);
+                                        if (currentTasks[index] && currentTasks[index].text === task.text && !currentTasks[index].habitica_id) {
+                                            currentTasks[index].habitica_id = response.data.id;
+                                            localStorage['tasks'] = JSON.stringify(currentTasks);
+                                        }
+                                    }
+                                });
                         }
                     });
                 }
-
            }
         }
         else if(request.method == 'save_owl_side'){
