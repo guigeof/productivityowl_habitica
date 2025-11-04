@@ -39,7 +39,7 @@ HABITICA.API = (function() {
 
         // Fetch existing tasks from Habitica
         $.ajax({
-            url: API_URL + "tasks/user?type=todos",
+            url: API_URL + "tasks/user",
             type: "GET",
             headers: headers,
             data: { type: 'todos' },

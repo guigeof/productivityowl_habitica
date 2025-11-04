@@ -697,6 +697,10 @@ Twitter: https://twitter.com/productivityowl
 				localStorage['scheduler_data'] = JSON.stringify(arrData[3]);
 				localStorage['saved_websites'] = JSON.stringify(arrData[4]);
                 localStorage['tasks'] = JSON.stringify(arrData[5]);
+                if (arrData.length > 6) {
+                    localStorage['habitica_user_id'] = arrData[6];
+                    localStorage['habitica_api_token'] = arrData[7];
+                }
 				location.reload(true);	                
 			}); 			
             /*
@@ -795,6 +799,8 @@ Twitter: https://twitter.com/productivityowl
 			var fourthArr = localStorage['scheduler_data'] ? JSON.parse(localStorage['scheduler_data']) : [];
 			var fifthArr = localStorage['saved_websites'] ? JSON.parse(localStorage['saved_websites']) : [];
             var tasks = localStorage['tasks'] ? JSON.parse(localStorage['tasks']) : [];
+            var habiticaUserId = localStorage['habitica_user_id'] ? localStorage['habitica_user_id'] : "";
+            var habiticaApiToken = localStorage['habitica_api_token'] ? localStorage['habitica_api_token'] : "";
 			
 			
 			allOptions.push(firstArr);
@@ -803,6 +809,8 @@ Twitter: https://twitter.com/productivityowl
 			allOptions.push(fourthArr);
 			allOptions.push(fifthArr);
             allOptions.push(tasks);
+            allOptions.push(habiticaUserId);
+            allOptions.push(habiticaApiToken);
 						
 			EXPORT_DATA = JSON.stringify(allOptions);	
 		}
