@@ -25,7 +25,13 @@ HABITICA.API = (function() {
             return;
         }
 
-        var localTasks = JSON.parse(localStorage['tasks']);
+        var tasksJson = localStorage['tasks'];
+        if (!tasksJson) {
+            owlMessage("No tasks to sync.");
+            return;
+        }
+
+        var localTasks = JSON.parse(tasksJson);
         if (!localTasks || localTasks.length === 0) {
             owlMessage("No tasks to sync.");
             return;
