@@ -193,8 +193,8 @@ Twitter: https://twitter.com/productivityowl
         
 		$('body').on('click', '#navigation ul li', function() 
 		{
-            var nameArr = new Array("Manage Websites", "Tasks & Rewards", "Timeboxing", "Browsing Stats", "Earn Respect", "Owl Interventions", 'Import/Export Settings');
-            var divArr = new Array("manage_websites", "prodowl-tasks_rewards", "timeboxing", "browsing_stats", "earn_respect", 'owl_interventions', 'import_export');
+            var nameArr = new Array("Manage Websites", "Tasks & Rewards", "Timeboxing", "Browsing Stats", "Earn Respect", "Owl Interventions", 'Import/Export Settings', 'Integrations');
+            var divArr = new Array("manage_websites", "prodowl-tasks_rewards", "timeboxing", "browsing_stats", "earn_respect", 'owl_interventions', 'import_export', 'integrations');
 
             //Reset all the LI navigation, hide all div in body
             for (var i = 0; i < nameArr.length; i++)
@@ -263,6 +263,7 @@ Twitter: https://twitter.com/productivityowl
 		setupEarnRespect();
 		setupInterventions();
 		setupExportOptions();
+		setupHabitica();
 		
         //tab direct links
         chrome.tabs.getCurrent(function(tab){
@@ -696,6 +697,10 @@ Twitter: https://twitter.com/productivityowl
 				localStorage['scheduler_data'] = JSON.stringify(arrData[3]);
 				localStorage['saved_websites'] = JSON.stringify(arrData[4]);
                 localStorage['tasks'] = JSON.stringify(arrData[5]);
+                if (arrData.length > 6) {
+                    localStorage['habitica_user_id'] = arrData[6];
+                    localStorage['habitica_api_token'] = arrData[7];
+                }
 				location.reload(true);	                
 			}); 			
             /*
@@ -794,6 +799,8 @@ Twitter: https://twitter.com/productivityowl
 			var fourthArr = localStorage['scheduler_data'] ? JSON.parse(localStorage['scheduler_data']) : [];
 			var fifthArr = localStorage['saved_websites'] ? JSON.parse(localStorage['saved_websites']) : [];
             var tasks = localStorage['tasks'] ? JSON.parse(localStorage['tasks']) : [];
+            var habiticaUserId = localStorage['habitica_user_id'] ? localStorage['habitica_user_id'] : "";
+            var habiticaApiToken = localStorage['habitica_api_token'] ? localStorage['habitica_api_token'] : "";
 			
 			
 			allOptions.push(firstArr);
@@ -802,6 +809,8 @@ Twitter: https://twitter.com/productivityowl
 			allOptions.push(fourthArr);
 			allOptions.push(fifthArr);
             allOptions.push(tasks);
+            allOptions.push(habiticaUserId);
+            allOptions.push(habiticaApiToken);
 						
 			EXPORT_DATA = JSON.stringify(allOptions);	
 		}
@@ -1137,4 +1146,136 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
  
 		/************************** TIMESPAN SCHEDULER FUNCTIONS *********************/
-		
+
+function setupHabitica() {
+    // Import from Habitica UI logic
+    $('#habitica_import_tasks').click(function() {
+        $('#habitica_import_list').hide();
+        if (typeof HABITICA !== 'undefined' && typeof HABITICA.importTodosWithSelection === 'function') {
+            HABITICA.importTodosWithSelection(function(owlTodos, allTodos, owlTagId) {
+                // Render checkboxes for all todos, pre-selecting Owl-tagged
+                var html = '';
+                allTodos.forEach(function(todo) {
+                    var checked = (Array.isArray(todo.tags) && todo.tags.includes(owlTagId)) ? 'checked' : '';
+                    var safeText = $('<div>').text(todo.text).html();
+                    html += '<div><label><input type="checkbox" name="import_todo" value="' + todo.id + '" ' + checked + '> ' + safeText + '</label></div>';
+                });
+                $('#habitica_import_todos').html(html);
+                $('#habitica_import_list').show();
+            });
+        } else {
+            owlMessage("Error: Habitica integration not properly loaded. Please refresh the page.");
+        }
+    });
+
+    $('#habitica_import_form').on('submit', function(e) {
+        e.preventDefault();
+        var selectedIds = [];
+        $('#habitica_import_todos input[name="import_todo"]:checked').each(function() {
+            selectedIds.push($(this).val());
+        });
+        if (typeof HABITICA !== 'undefined' && typeof HABITICA.importTodosWithSelection === 'function' && typeof TASKS !== 'undefined' && TASKS.item && TASKS.Items) {
+            HABITICA.importTodosWithSelection(function(owlTodos, allTodos, owlTagId) {
+                var selectedTodos = allTodos.filter(function(todo) { return selectedIds.includes(todo.id); });
+                // Build a set of existing Habitica IDs and normalized texts to avoid duplicates
+                var existingIds = new Set();
+                var existingTexts = new Set();
+                TASKS.Items.currentItems.forEach(function(item) {
+                    if (item.habitica_id) existingIds.add(String(item.habitica_id));
+                    if (item.task_text) existingTexts.add(item.task_text.trim().toLowerCase());
+                });
+                var importedCount = 0;
+                selectedTodos.forEach(function(todo) {
+                    // Skip if already present by habitica_id or normalized text
+                    var normId = String(todo.id);
+                    var normText = (todo.text||'').trim().toLowerCase();
+                    if (existingIds.has(normId) || existingTexts.has(normText)) {
+                        return;
+                    }
+                    // Parse subtasks from checklist and notes, avoiding duplicates
+                    var subtasks = [];
+                    var subtaskTexts = new Set();
+                    // Checklist property
+                    if (Array.isArray(todo.checklist) && todo.checklist.length > 0) {
+                        todo.checklist.forEach(function(cl) {
+                            if (cl.text) {
+                                var norm = cl.text.trim().toLowerCase();
+                                if (!subtaskTexts.has(norm)) {
+                                    var subItem = new TASKS.item().init(cl.text, -1, null);
+                                    subItem.parent_task = TASKS.Items.currentItems.length;
+                                    subtasks.push(subItem);
+                                    subtaskTexts.add(norm);
+                                }
+                            }
+                        });
+                    }
+                    // Notes property
+                    if (todo.notes) {
+                        var lines = todo.notes.split(/\r?\n/);
+                        lines.forEach(function(line) {
+                            var match = line.match(/^[-*] \[ \] (.+)$/);
+                            if (match) {
+                                var subtaskText = match[1].trim();
+                                var norm = subtaskText.toLowerCase();
+                                if (!subtaskTexts.has(norm)) {
+                                    var subItem = new TASKS.item().init(subtaskText, -1, null);
+                                    subItem.parent_task = TASKS.Items.currentItems.length;
+                                    subtasks.push(subItem);
+                                    subtaskTexts.add(norm);
+                                }
+                            }
+                        });
+                    }
+                    var item = new TASKS.item().init(todo.text, TASKS.Items.currentItems.length, subtasks);
+                    item.habitica_id = todo.id;
+                    item.completed = todo.completed || false;
+                    TASKS.Items.addNewItem(item, TASKS.Items.currentItems.length);
+                    // Add to duplicate sets so subsequent imports in this batch are checked
+                    existingIds.add(normId);
+                    existingTexts.add(normText);
+                    importedCount++;
+                });
+                TASKS.Items.saveTasks();
+                owlMessage('Imported ' + importedCount + ' new tasks from Habitica.');
+                $('#habitica_import_list').hide();
+                if (typeof TASKS.Items.render === 'function') {
+                    TASKS.Items.render();
+                }
+            });
+        }
+    });
+    // Load Habitica settings
+    const habiticaUserId = localStorage["habitica_user_id"];
+    const habiticaApiToken = localStorage["habitica_api_token"];
+
+    if (habiticaUserId) {
+        $('#habitica_user_id').val(habiticaUserId);
+    }
+
+    if (habiticaApiToken) {
+        $('#habitica_api_token').val(habiticaApiToken);
+    }
+
+    $('#habitica_sync_tasks').click(function() {
+        // Save current values
+        const newHabiticaUserId = $('#habitica_user_id').val();
+        const newHabiticaApiToken = $('#habitica_api_token').val();
+
+        if (!newHabiticaUserId || !newHabiticaApiToken) {
+            owlMessage("Please enter both Habitica User ID and API Token.");
+            return;
+        }
+
+        localStorage['habitica_user_id'] = newHabiticaUserId;
+        localStorage['habitica_api_token'] = newHabiticaApiToken;
+
+        owlMessage("Habitica settings saved. Starting task sync...");
+        
+        // Make sure HABITICA object is defined before using it
+        if (typeof HABITICA !== 'undefined' && HABITICA.API && typeof HABITICA.API.syncTasks === 'function') {
+            HABITICA.API.syncTasks();
+        } else {
+            owlMessage("Error: Habitica integration not properly loaded. Please refresh the page.");
+        }
+    });
+}

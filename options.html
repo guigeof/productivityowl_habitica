@@ -38,7 +38,8 @@
     <script type="text/javascript" src="js/options/task_list.js"></script>	
     <script type="text/javascript" src="js/options/stats.js"></script>	
     <script type="text/javascript" src="js/options/interventions.js"></script>	
-    <script type="text/javascript" src="js/options/respect.js"></script>	
+    <script type="text/javascript" src="js/options/respect.js"></script>
+    <script type="text/javascript" src="js/habitica.js"></script>
 </head>
 <body>
 	<div id="sidebar">
@@ -83,7 +84,10 @@
 		            </li>                    
 		            <li id="li_import_export">
 		                <a href="#">Import/Export Settings</a>
-		            </li>				
+		            </li>
+                    <li id="li_integrations">
+                        <a href="#">Integrations</a>
+                    </li>
 		        </ul>
 		    </div>
 		    <!-- fine navigazione -->
@@ -618,6 +622,43 @@
 			Open the file you saved, copy and paste the text in the area below and hit import.<br>
 			<textarea id="import_settings_text" rows="15"></textarea><br style="clear:both"><br>
 			<button class="export_import" id="owl_import_settings">Import Settings</button>
+		</div>
+		<div id="integrations">
+               <br><h3>Habitica Integration</h3>
+               <p>Enter your Habitica User ID and API Token to sync your tasks.</p>
+               <br>
+               <div class="left_options">
+                   <table>
+                       <tr>
+                           <td>
+                               <h3>User ID</h3>
+                           </td>
+                           <td>
+                               <input type="text" id="habitica_user_id" size="50">
+                           </td>
+                       </tr>
+                       <tr>
+                           <td>
+                               <h3>API Token</h3>
+                           </td>
+                           <td>
+                               <input type="text" id="habitica_api_token" size="50">
+                           </td>
+                       </tr>
+                   </table>
+                   <br>
+                   <button class="owl_big_button" id="habitica_sync_tasks">Sync Tasks</button>
+               </div>
+               <div class="right_options" style="margin-top:30px;">
+                   <h4>Import Tasks from Habitica</h4>
+                   <button class="owl_big_button" id="habitica_import_tasks">Import from Habitica</button>
+                   <div id="habitica_import_list" style="margin-top:15px; display:none;">
+                       <form id="habitica_import_form">
+                           <div id="habitica_import_todos"></div>
+                           <button type="submit" class="owl_big_button" style="margin-top:10px;">Import Selected</button>
+                       </form>
+                   </div>
+               </div>
 		</div>
 		
 			

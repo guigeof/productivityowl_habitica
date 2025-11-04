@@ -333,43 +333,50 @@ TASKS.buttonHandlers = function(){
         var theMin = parseInt(taskObject['freetime_credits']);
         var taskText = taskObject['task_text'];
         if(taskObject.subtasks.length > 0){
-            if(taskObject.subtasks.length > 0){
-                for(var s = 0; s < taskObject.subtasks.length; s++){
-                    theMin += taskObject.subtasks[s].freetime_credits;
-                }
-            }            
-        }        
+            for(var s = 0; s < taskObject.subtasks.length; s++){
+                theMin += taskObject.subtasks[s].freetime_credits;
+            }
+        }
         var timeCreated = taskObject['time_created'];
         var timeCreatedSec = timeCreated / 1000;
         var nowSec = (new Date().getTime()) / 1000;
         var diffSec = nowSec - timeCreatedSec;
-        
-        //console.log("adding min to vacation time (total min) " + theMin);
-        
+
         var testGibberish = gibberish.detect(taskText);
         console.log("gibberish score");
         console.log(testGibberish);
-        
+
+        // If this task has a Habitica ID, mark it complete in Habitica
+        if (taskObject.habitica_id) {
+            if (window.HABITICA && window.HABITICA.API && typeof window.HABITICA.API.completeHabiticaTask === 'function') {
+                window.HABITICA.API.completeHabiticaTask(taskObject.habitica_id, function(err, resp) {
+                    if (err) {
+                        console.error('Failed to complete Habitica task:', err);
+                        owlMessage('Failed to mark Habitica task complete.');
+                    } else {
+                        console.log('Habitica task marked complete:', resp);
+                    }
+                });
+            }
+        }
+
         if(diffSec > 180){
             chrome.runtime.sendMessage({method: "addVacationTime", time: theMin, task_text: taskText, subtask: 'no', subtask_count: taskObject.subtasks.length},
             function(response)
             {
-                //console.log("response task addVacationTime: ");
-                //console.log(response);
                 CURRENT_VACATION_TIME = response['data'];
                 $('#vacationtime_knob').val(CURRENT_VACATION_TIME);
-            });      
+            });
         }else{
             owlInterception("I've decided to NOT reward you break time for this task.  Work harder to earn my respect.");
         }
-        //alert("removing and re-rendering");
         TASKS.Items.currentItems.splice(taskIndex, 1);
         $('#taskitem_' + taskIndex).fadeOut("slow", function() 
         {
             $(this).remove(); 
             TASKS.Items.render();
         });
-        TASKS.Items.saveTasks();  
+        TASKS.Items.saveTasks();
    });
    
    $('#tasklist').on('click', '.tasktask_edit', function(e){

@@ -90,6 +90,12 @@ owlSayings['exception'] = new Array("I don't make exceptions","I don't make exce
  
  owlSayings['save_button'] = new Array('This page has been saved for later',
  'This page has been saved for later');
+
+owlSayings['integrations'] = new Array(
+'Integrating with other services can help you stay on track with your goals.',
+'I will only integrate with services that I respect.',
+'If you have any suggestions for other integrations, please let me know.'
+);
  
 
 owlSayings['respect_tips'] = new Array("The owl respects people who set plans and stick to them.  Use the timeboxing schedule to plan periods you know you should be working.",  
