@@ -230,42 +230,32 @@
                 return;
             }
 
-            const lastSyncedTime = parseFloat(localStorage['last_synced_time'] || 0);
-            const lastSyncedCoins = parseFloat(localStorage['last_synced_coins'] || 0);
-
-            const currentRewardedTime = parseFloat(localStorage['vacation_time'] || 0);
+            let originalCoins = 0;
 
             getUser().then(function(user) {
-                const currentHabiticaCoins = user.data.stats.gp;
+                originalCoins = user.data.stats.gp;
 
-                const timeDelta = currentRewardedTime - lastSyncedTime;
-                const coinDelta = currentHabiticaCoins - lastSyncedCoins;
-
-                let newHabiticaCoins = currentHabiticaCoins;
-                let newRewardedTime = currentRewardedTime;
-
-                if (Math.abs(timeDelta) > 0.01) {
-                    newHabiticaCoins += timeDelta * conversionRate;
+                if (originalCoins <= 0) {
+                    owlMessage("You have no coins to convert.");
+                    return Promise.reject("No coins"); // Abort chain
                 }
-                if (Math.abs(coinDelta) > 0.01) {
-                    newRewardedTime += coinDelta / conversionRate;
-                }
+                // Setting coins to 0 is the simplest interpretation of "converting all coins".
+                return updateUser({ "stats.gp": 0 });
 
-                if (Math.abs(newHabiticaCoins - currentHabiticaCoins) < 0.01 && Math.abs(newRewardedTime - currentRewardedTime) < 0.01) {
-                    owlMessage("Coins and rewarded time are already in sync.");
-                    return;
-                }
+            }).then(function(updateResponse) {
+                // Coins were successfully set to 0 in Habitica
+                const timeToAdd = originalCoins / conversionRate;
+                let currentVacationTime = parseFloat(localStorage['vacation_time']) || 0;
+                const newTotalTime = currentVacationTime + timeToAdd;
 
-                localStorage['vacation_time'] = newRewardedTime;
-                updateUser({ "stats.gp": newHabiticaCoins }).then(function() {
-                    localStorage['last_synced_time'] = newRewardedTime;
-                    localStorage['last_synced_coins'] = newHabiticaCoins;
-                    owlMessage("Successfully synced with Habitica.");
-                }).fail(function() {
-                    owlMessage("Failed to sync coins to Habitica. Please check your settings.");
-                });
-            }).fail(function() {
-                owlMessage("Failed to get user data from Habitica. Please check your settings.");
+                localStorage['vacation_time'] = newTotalTime;
+
+                owlMessage(`Converted ${originalCoins.toFixed(2)} coins to ${timeToAdd.toFixed(2)} minutes. You now have a total of ${newTotalTime.toFixed(2)} minutes.`);
+
+            }).fail(function(error) {
+                if (error !== "No coins") {
+                     owlMessage("Failed to update coins on Habitica. Conversion cancelled.");
+                }
             });
         }
 

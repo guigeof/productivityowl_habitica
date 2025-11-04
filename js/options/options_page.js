@@ -1268,7 +1268,7 @@ function setupHabitica() {
             return;
         }
         localStorage['habitica_coin_conversion_rate'] = conversionRate;
-        owlMessage("Conversion rate saved. Starting coin sync...");
+        owlMessage("Conversion rate saved. Starting conversion...");
         if (typeof HABITICA !== 'undefined' && HABITICA.API && typeof HABITICA.API.syncCoins === 'function') {
             HABITICA.API.syncCoins();
         } else {
