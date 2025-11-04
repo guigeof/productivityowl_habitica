@@ -14,6 +14,7 @@ HABITICA.API = (function() {
         return {
             "x-api-user": userId,
             "x-api-key": apiToken,
+            "x-client": userId + "-ProductivityOwl",
             "Content-Type": "application/json"
         };
     }
