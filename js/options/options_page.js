@@ -1256,6 +1256,26 @@ function setupHabitica() {
         $('#habitica_api_token').val(habiticaApiToken);
     }
 
+    const habiticaCoinConversionRate = localStorage["habitica_coin_conversion_rate"];
+    if (habiticaCoinConversionRate) {
+        $('#habitica_coin_conversion_rate').val(habiticaCoinConversionRate);
+    }
+
+    $('#habitica_sync_coins').click(function() {
+        const conversionRate = $('#habitica_coin_conversion_rate').val();
+        if (!conversionRate || isNaN(parseFloat(conversionRate))) {
+            owlMessage("Please enter a valid number for the conversion rate.");
+            return;
+        }
+        localStorage['habitica_coin_conversion_rate'] = conversionRate;
+        owlMessage("Conversion rate saved. Starting coin sync...");
+        if (typeof HABITICA !== 'undefined' && HABITICA.API && typeof HABITICA.API.syncCoins === 'function') {
+            HABITICA.API.syncCoins();
+        } else {
+            owlMessage("Error: Habitica integration not properly loaded. Please refresh the page.");
+        }
+    });
+
     $('#habitica_sync_tasks').click(function() {
         // Save current values
         const newHabiticaUserId = $('#habitica_user_id').val();

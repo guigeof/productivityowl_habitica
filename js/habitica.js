@@ -201,10 +201,79 @@
         // Expose importTodosWithSelection for UI integration
         window.HABITICA.importTodosWithSelection = importTodosWithSelection;
 
+        function getUser() {
+            const headers = getHeaders();
+            if (!headers) return Promise.reject("Missing Habitica credentials");
+            return $.ajax({
+                url: API_URL + "user",
+                type: "GET",
+                headers: headers
+            });
+        }
+
+        function updateUser(updateData) {
+            const headers = getHeaders();
+            if (!headers) return Promise.reject("Missing Habitica credentials");
+            return $.ajax({
+                url: API_URL + "user",
+                type: "PUT",
+                headers: headers,
+                contentType: "application/json",
+                data: JSON.stringify(updateData)
+            });
+        }
+
+        function syncCoins() {
+            const conversionRate = parseFloat(localStorage['habitica_coin_conversion_rate']);
+            if (isNaN(conversionRate) || conversionRate <= 0) {
+                owlMessage("Invalid conversion rate. Please set a valid rate in the options.");
+                return;
+            }
+
+            const lastSyncedTime = parseFloat(localStorage['last_synced_time'] || 0);
+            const lastSyncedCoins = parseFloat(localStorage['last_synced_coins'] || 0);
+
+            const currentRewardedTime = parseFloat(localStorage['vacation_time'] || 0);
+
+            getUser().then(function(user) {
+                const currentHabiticaCoins = user.data.stats.gp;
+
+                const timeDelta = currentRewardedTime - lastSyncedTime;
+                const coinDelta = currentHabiticaCoins - lastSyncedCoins;
+
+                let newHabiticaCoins = currentHabiticaCoins;
+                let newRewardedTime = currentRewardedTime;
+
+                if (Math.abs(timeDelta) > 0.01) {
+                    newHabiticaCoins += timeDelta * conversionRate;
+                }
+                if (Math.abs(coinDelta) > 0.01) {
+                    newRewardedTime += coinDelta / conversionRate;
+                }
+
+                if (Math.abs(newHabiticaCoins - currentHabiticaCoins) < 0.01 && Math.abs(newRewardedTime - currentRewardedTime) < 0.01) {
+                    owlMessage("Coins and rewarded time are already in sync.");
+                    return;
+                }
+
+                localStorage['vacation_time'] = newRewardedTime;
+                updateUser({ "stats.gp": newHabiticaCoins }).then(function() {
+                    localStorage['last_synced_time'] = newRewardedTime;
+                    localStorage['last_synced_coins'] = newHabiticaCoins;
+                    owlMessage("Successfully synced with Habitica.");
+                }).fail(function() {
+                    owlMessage("Failed to sync coins to Habitica. Please check your settings.");
+                });
+            }).fail(function() {
+                owlMessage("Failed to get user data from Habitica. Please check your settings.");
+            });
+        }
+
         return {
             syncTasks: syncTasks,
             createTask: createTask,
-            completeHabiticaTask: completeHabiticaTask
+            completeHabiticaTask: completeHabiticaTask,
+            syncCoins: syncCoins
         };
     })();
 

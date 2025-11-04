@@ -417,6 +417,9 @@ Twitter: https://twitter.com/productivityowl
 			
 			vacationTime = vacationTime + timeAmount;
 			localStorage['vacation_time'] = vacationTime;
+			if (localStorage['habitica_user_id'] && localStorage['habitica_api_token']) {
+                HABITICA.API.syncCoins();
+            }
 			//localStorage[]
 			
 			
@@ -486,6 +489,9 @@ Twitter: https://twitter.com/productivityowl
 				localStorage['start_vacation_duration'] = request.amount;
 				
 				localStorage['vacation_time'] = vacationTime - request.amount;
+                if (localStorage['habitica_user_id'] && localStorage['habitica_api_token']) {
+                    HABITICA.API.syncCoins();
+                }
 			}
 			else
 			{
