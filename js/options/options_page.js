@@ -193,8 +193,8 @@ Twitter: https://twitter.com/productivityowl
         
 		$('body').on('click', '#navigation ul li', function() 
 		{
-            var nameArr = new Array("Manage Websites", "Tasks & Rewards", "Timeboxing", "Browsing Stats", "Earn Respect", "Owl Interventions", 'Import/Export Settings');
-            var divArr = new Array("manage_websites", "prodowl-tasks_rewards", "timeboxing", "browsing_stats", "earn_respect", 'owl_interventions', 'import_export');
+            var nameArr = new Array("Manage Websites", "Tasks & Rewards", "Timeboxing", "Browsing Stats", "Earn Respect", "Owl Interventions", 'Import/Export Settings', 'Integrations');
+            var divArr = new Array("manage_websites", "prodowl-tasks_rewards", "timeboxing", "browsing_stats", "earn_respect", 'owl_interventions', 'import_export', 'integrations');
 
             //Reset all the LI navigation, hide all div in body
             for (var i = 0; i < nameArr.length; i++)
@@ -263,6 +263,7 @@ Twitter: https://twitter.com/productivityowl
 		setupEarnRespect();
 		setupInterventions();
 		setupExportOptions();
+		setupHabitica();
 		
         //tab direct links
         chrome.tabs.getCurrent(function(tab){
@@ -1137,4 +1138,27 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
  
 		/************************** TIMESPAN SCHEDULER FUNCTIONS *********************/
-		
+
+function setupHabitica() {
+    var habiticaUserId = localStorage["habitica_user_id"];
+    var habiticaApiToken = localStorage["habitica_api_token"];
+
+    if (habiticaUserId) {
+        $('#habitica_user_id').val(habiticaUserId);
+    }
+
+    if (habiticaApiToken) {
+        $('#habitica_api_token').val(habiticaApiToken);
+    }
+
+    $('#habitica_sync_tasks').click(function() {
+        var habiticaUserId = $('#habitica_user_id').val();
+        var habiticaApiToken = $('#habitica_api_token').val();
+
+        localStorage['habitica_user_id'] = habiticaUserId;
+        localStorage['habitica_api_token'] = habiticaApiToken;
+
+        owlMessage("Habitica settings saved.");
+        HABITICA.API.syncTasks();
+    });
+}

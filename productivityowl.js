@@ -80,7 +80,24 @@ Twitter: https://twitter.com/productivityowl
            if(theTasks){
                var jsonEncoded = JSON.stringify(theTasks);
                //console.log(jsonEncoded);
-               localStorage['tasks'] = jsonEncoded;                                 
+               localStorage['tasks'] = jsonEncoded;
+
+                var oldTasks = localStorage['tasks'] ? JSON.parse(localStorage['tasks']) : [];
+                var newTasks = theTasks;
+
+                newTasks.forEach(function(newTask) {
+                    var isNew = true;
+                    oldTasks.forEach(function(oldTask) {
+                        if (newTask.text === oldTask.text) {
+                            isNew = false;
+                        }
+                    });
+
+                    if (isNew) {
+                        HABITICA.API.createTask(newTask.text);
+                    }
+                });
+
            }
         }
         else if(request.method == 'save_owl_side'){

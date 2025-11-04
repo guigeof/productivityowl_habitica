@@ -13,7 +13,7 @@
 	"default_title": "Productivity Owl"
   },
   "background": {
-    "scripts": ["jslib/jquery-3.3.1.min.js", "jslib/date.js", "jslib/time.js", "js/options/respect.js", "productivityowl.js"]
+    "scripts": ["jslib/jquery-3.3.1.min.js", "jslib/date.js", "jslib/time.js", "js/options/respect.js", "productivityowl.js", "js/habitica.js"]
   },
   "options_page": "options.html",
   "permissions": [
