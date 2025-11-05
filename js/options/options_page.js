@@ -1268,9 +1268,16 @@ function setupHabitica() {
             return;
         }
         localStorage['habitica_coin_conversion_rate'] = conversionRate;
-        owlMessage("Conversion rate saved. Starting conversion...");
+
+        const timeToBuy = $('#habitica_time_to_buy').val();
+        if (!timeToBuy || isNaN(parseFloat(timeToBuy)) || parseFloat(timeToBuy) <= 0) {
+            owlMessage("Please enter a valid number of minutes to buy.");
+            return;
+        }
+
+        owlMessage("Conversion rate saved. Starting purchase...");
         if (typeof HABITICA !== 'undefined' && HABITICA.API && typeof HABITICA.API.syncCoins === 'function') {
-            HABITICA.API.syncCoins();
+            HABITICA.API.syncCoins(parseFloat(timeToBuy));
         } else {
             owlMessage("Error: Habitica integration not properly loaded. Please refresh the page.");
         }

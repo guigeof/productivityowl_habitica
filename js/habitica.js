@@ -223,38 +223,41 @@
             });
         }
 
-        function syncCoins() {
+        function syncCoins(timeToBuy) {
             const conversionRate = parseFloat(localStorage['habitica_coin_conversion_rate']);
             if (isNaN(conversionRate) || conversionRate <= 0) {
                 owlMessage("Invalid conversion rate. Please set a valid rate in the options.");
                 return;
             }
 
+            const cost = timeToBuy * conversionRate;
             let originalCoins = 0;
 
             getUser().then(function(user) {
                 originalCoins = user.data.stats.gp;
 
-                if (originalCoins <= 0) {
-                    owlMessage("You have no coins to convert.");
-                    return Promise.reject("No coins"); // Abort chain
+                if (originalCoins < cost) {
+                    owlMessage(`You do not have enough coins. You need ${cost.toFixed(2)} coins, but you only have ${originalCoins.toFixed(2)}.`);
+                    return Promise.reject("Insufficient funds"); // Abort chain
                 }
-                // Setting coins to 0 is the simplest interpretation of "converting all coins".
-                return updateUser({ "stats.gp": 0 });
+
+                const newCoinTotal = originalCoins - cost;
+                return updateUser({ "stats.gp": newCoinTotal });
 
             }).then(function(updateResponse) {
-                // Coins were successfully set to 0 in Habitica
-                const timeToAdd = originalCoins / conversionRate;
+                // Coins were successfully updated in Habitica
                 let currentVacationTime = parseFloat(localStorage['vacation_time']) || 0;
-                const newTotalTime = currentVacationTime + timeToAdd;
+                const newTotalTime = currentVacationTime + timeToBuy;
 
                 localStorage['vacation_time'] = newTotalTime;
 
-                owlMessage(`Converted ${originalCoins.toFixed(2)} coins to ${timeToAdd.toFixed(2)} minutes. You now have a total of ${newTotalTime.toFixed(2)} minutes.`);
+                owlMessage(`Successfully purchased ${timeToBuy} minutes for ${cost.toFixed(2)} coins. You now have a total of ${newTotalTime.toFixed(2)} minutes.`);
 
             }).fail(function(error) {
-                if (error !== "No coins") {
-                     owlMessage("Failed to update coins on Habitica. Conversion cancelled.");
+                if (error === "Insufficient funds") {
+                    // The message was already shown, so do nothing here.
+                } else {
+                     owlMessage("Failed to update coins on Habitica. Purchase cancelled.");
                 }
             });
         }
